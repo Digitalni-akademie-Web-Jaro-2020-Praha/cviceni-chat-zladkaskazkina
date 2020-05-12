@@ -28,11 +28,17 @@ const renderMessages = (messages) => {
     messagesElement.appendChild(itemElm);
   }
 };
+let lastUpdate = 0;
 
 const updateMessages = () => {
   fetch('https://czechichat.herokuapp.com/api/list-messages')
     .then(response => response.json())
-    .then(data => renderMessages(data.messages));
+    .then(data => {
+      if (lastUpdate != data.lastUpdate) {
+        lastUpdate = data.lastUpdate;
+        renderMessages(data.messages);
+      }
+    });
 };
 
 setInterval(updateMessages, 2000); // Každé dvě sekundy zavolá updateMessages
@@ -41,19 +47,13 @@ setInterval(updateMessages, 2000); // Každé dvě sekundy zavolá updateMessage
 
 const nameInputElement = document.querySelector('#name-input');
 const messageInputElement = document.querySelector('#message-input');
+const submitBtnElement = document.querySelector('#submit-button');
 
 const onSubmit = (event) => {
   event.preventDefault(); // Zamezí přesměrování na jinou stránku při odesílání formuláře
+  submitBtnElement.setAttribute('disabled', true);
 
-  console.log(
-    'Data:',
-    JSON.stringify({
-      name: nameInputElement.value,
-      message: messageInputElement.value,
-    }),
-  );
-
-  // @TODO: odešli zprávu na server
+  // odešli zprávu na server
   fetch('https://czechichat.herokuapp.com/api/send-message', {
     method: 'POST',
     headers: {
@@ -63,7 +63,9 @@ const onSubmit = (event) => {
       name: nameInputElement.value,
       message: messageInputElement.value,
     })
-  })
+  }).then(() => {
+    submitBtnElement.removeAttribute('disabled');
+  });
   messageInputElement.value = '';
 
 };
